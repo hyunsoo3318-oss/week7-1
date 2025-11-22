@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api';
+import styles from './ProfilePage.module.css';
 
 interface ProfileData {
   enrollYear: number;
@@ -21,7 +22,7 @@ const ProfilePage = () => {
       try {
         const response = await apiClient.get('/api/applicant/me');
         const data: ProfileData = response.data;
-        setEnrollYear(data.enrollYear.toString());
+        setEnrollYear(data.enrollYear.toString().slice(-2));
         setDepartments(data.department.split(','));
         setCvFileName(data.cvKey.split('/').pop() || null);
       } catch (error: any) {
@@ -82,7 +83,7 @@ const ProfilePage = () => {
       setError('Student ID must be a two-digit number.');
       return false;
     }
-    if (departments.some((dep) => !dep.trim())) {
+    if (departments.some(dep => !dep.trim())) {
       setError('All department fields must be filled.');
       return false;
     }
@@ -104,17 +105,12 @@ const ProfilePage = () => {
       return;
     }
 
-    const formattedEnrollYear =
-      parseInt(enrollYear) < 50
-        ? 2000 + parseInt(enrollYear)
-        : 1900 + parseInt(enrollYear);
+    const formattedEnrollYear = parseInt(enrollYear) < 50 ? 2000 + parseInt(enrollYear) : 1900 + parseInt(enrollYear);
     const formattedDepartments = departments.join(',');
     const randomString = Math.random().toString(36).substring(2, 12);
     const date = new Date();
     const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
-    const cvKey = cvFileName
-      ? `static/private/CV/${randomString}_${formattedDate}/${cvFileName}`
-      : '';
+    const cvKey = cvFileName ? `static/private/CV/${randomString}_${formattedDate}/${cvFileName}` : '';
 
     try {
       await apiClient.put('/api/applicant/me', {
@@ -131,23 +127,28 @@ const ProfilePage = () => {
   };
 
   return (
-    <div>
-      <h1>Profile</h1>
-      <form onSubmit={handleSubmit}>
+    <div className={styles.profilePage}>
+      <h1 className={styles.title}>프로필 생성</h1>
+      <h2 className={styles.sectionTitle}>필수 작성 항목</h2>
+      <p>아래 항목은 필수로 작성해주세요.</p>
+      <form onSubmit={handleSubmit} className={styles.form}>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <div>
-          <label>Student ID (two-digit number)</label>
-          <input
-            type="text"
-            value={enrollYear}
-            onChange={(e) => setEnrollYear(e.target.value)}
-            maxLength={2}
-          />
+        <div className={styles.formGroup}>
+          <label>학번 *</label>
+          <div className={styles.studentIdInput}>
+            <input
+              type="text"
+              value={enrollYear}
+              onChange={(e) => setEnrollYear(e.target.value)}
+              maxLength={2}
+            />
+            <span>학번</span>
+          </div>
         </div>
-        <div>
-          <label>Department (Main department first, up to 6 additional)</label>
+        <div className={styles.formGroup}>
+          <label>학과 *</label>
           {departments.map((department, index) => (
-            <div key={index}>
+            <div key={index} className={styles.departmentInput}>
               <input
                 type="text"
                 value={department}
@@ -155,21 +156,48 @@ const ProfilePage = () => {
               />
               {index > 0 && (
                 <button type="button" onClick={() => removeDepartment(index)}>
-                  Remove
+                  삭제
                 </button>
               )}
             </div>
           ))}
           <button type="button" onClick={addDepartment}>
-            Add Department
+            추가
           </button>
         </div>
-        <div>
-          <label>CV (PDF only, max 5MB)</label>
-          <input type="file" accept=".pdf" onChange={handleCvChange} />
-          {cvFileName && <p>Selected CV: {cvFileName}</p>}
+        <div className={styles.formGroup}>
+          <label>이력서 (CV) *</label>
+          {cvFileName ? (
+            <div className={styles.cvSelected}>
+              <div className={styles.cvFileName}>{cvFileName}</div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCvFile(null);
+                  setCvFileName(null);
+                }}
+                className={`${styles.button} ${styles.deleteButton}`}
+              >
+                삭제
+              </button>
+            </div>
+          ) : (
+            <div className={styles.cvInput}>
+              <label htmlFor="cv-upload">
+                ↑ PDF 파일만 업로드 가능해요.
+              </label>
+              <input id="cv-upload" type="file" accept=".pdf" onChange={handleCvChange} style={{ display: 'none' }} />
+            </div>
+          )}
         </div>
-        <button type="submit">Save</button>
+        <div>
+          <button type="submit" className={`${styles.button} ${styles.saveButton}`}>
+            저장
+          </button>
+          <button type="button" onClick={() => navigate(-1)} className={`${styles.button} ${styles.backButton}`}>
+            뒤로가기
+          </button>
+        </div>
       </form>
     </div>
   );

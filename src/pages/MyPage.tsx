@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api';
-import { Post, User } from '../type';
+import { Post } from '../type';
+import styles from './MyPage.module.css';
+import { FaBookmark } from 'react-icons/fa';
 
 interface Profile {
   name: string;
@@ -68,22 +70,40 @@ const MyPage = () => {
   };
 
   return (
-    <div>
-      <h1>My Page</h1>
-      <div>
-        <button onClick={() => setActiveTab('bookmarks')}>
-          Bookmarked Internships
-        </button>
-        <button onClick={() => setActiveTab('info')}>My Information</button>
+    <div className={styles.myPage}>
+      <h1 className={styles.title}>마이페이지</h1>
+      <div className={styles.tabs}>
+        <div
+          className={`${styles.tab} ${
+            activeTab === 'bookmarks' ? styles.activeTab : ''
+          }`}
+          onClick={() => setActiveTab('bookmarks')}
+        >
+          관심공고
+        </div>
+        <div
+          className={`${styles.tab} ${
+            activeTab === 'info' ? styles.activeTab : ''
+          }`}
+          onClick={() => setActiveTab('info')}
+        >
+          내 정보
+        </div>
+        {activeTab === 'info' && profileExists && (
+          <Link to="/profile" className={styles.editProfileButton}>
+            내 프로필 수정
+          </Link>
+        )}
       </div>
       {activeTab === 'bookmarks' && (
         <div>
-          <h2>Bookmarked Internships</h2>
           {bookmarkedPosts.map((post) => (
-            <div key={post.id}>
-              <h3>{post.companyName}</h3>
-              <p>{post.positionTitle}</p>
-              <p
+            <div key={post.id} className={styles.bookmarkCard}>
+              <FaBookmark className={styles.bookmarkIcon} />
+              <div className={styles.companyName}>{post.companyName}</div>
+              <div className={styles.positionTitle}>{post.positionTitle}</div>
+              <div
+                className={styles.deadline}
                 style={{
                   color:
                     calculateDday(post.employmentEndDate) === '마감'
@@ -92,26 +112,28 @@ const MyPage = () => {
                 }}
               >
                 {calculateDday(post.employmentEndDate)}
-              </p>
+              </div>
             </div>
           ))}
         </div>
       )}
       {activeTab === 'info' && (
         <div>
-          <h2>My Information</h2>
           {profileExists ? (
-            <div>
-              <p>Name: {profile?.name}</p>
-              <p>Email: {profile?.email}</p>
-              <p>Student ID: {profile?.enrollYear}</p>
-              <p>Department: {profile?.department}</p>
-              <Link to="/profile">Edit Profile</Link>
+            <div className={styles.profileInfo}>
+              <div className={styles.profileName}>{profile?.name}</div>
+              <div className={styles.profileEmail}>{profile?.email}</div>
+              <div className={styles.profileDetails}>
+                {profile?.department} {profile?.enrollYear.toString().slice(-2)}학번
+              </div>
             </div>
           ) : (
-            <div>
-              <p>You have not created a profile yet.</p>
-              <Link to="/profile">Create Profile</Link>
+            <div className={styles.noProfile}>
+              <h2>아직 프로필이 등록되지 않았어요!</h2>
+              <p>기업에 소개할 나의 정보를 작성해서 나를 소개해보세요.</p>
+              <Link to="/profile" className={styles.createProfileButton}>
+                지금 바로 프로필 작성하기
+              </Link>
             </div>
           )}
         </div>
