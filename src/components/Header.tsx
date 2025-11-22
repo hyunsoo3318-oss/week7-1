@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User } from '../auth';
 
 interface HeaderProps {
@@ -7,6 +7,13 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    onLogout();
+    navigate('/');
+  };
+
   return (
     <header>
       <nav>
@@ -16,10 +23,8 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
         <div className="nav-links">
           {user ? (
             <>
-              <Link to="/mypage" className="nav-links">
-                마이페이지
-              </Link>
-              <button onClick={onLogout} className="logout-button">
+              <Link to="/mypage" className="nav-links">마이페이지</Link>
+              <button onClick={handleLogout} className="logout-button">
                 로그아웃
               </button>
             </>

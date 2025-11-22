@@ -14,7 +14,12 @@ const ProfilePage = () => {
   const [departments, setDepartments] = useState<string[]>(['']);
   const [cvFile, setCvFile] = useState<File | null>(null);
   const [cvFileName, setCvFileName] = useState<string | null>(null);
-  const [error, setError] = useState('');
+
+  const [enrollYearError, setEnrollYearError] = useState('');
+  const [departmentsError, setDepartmentsError] = useState('');
+  const [cvError, setCvError] = useState('');
+  const [generalError, setGeneralError] = useState('');
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,7 +35,7 @@ const ProfilePage = () => {
           // Profile does not exist, so we are creating a new one
         } else {
           console.error('Failed to fetch profile:', error);
-          setError('Failed to load profile data.');
+          setGeneralError('Failed to load profile data.');
         }
       }
     };
@@ -41,6 +46,7 @@ const ProfilePage = () => {
     const newDepartments = [...departments];
     newDepartments[index] = value;
     setDepartments(newDepartments);
+    setDepartmentsError('');
   };
 
   const addDepartment = () => {
@@ -61,46 +67,60 @@ const ProfilePage = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.type !== 'application/pdf') {
-        setError('Only PDF files are allowed for CV.');
+        setCvError('Only PDF files are allowed for CV.');
         setCvFile(null);
         setCvFileName(null);
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        setError('CV file size cannot exceed 5MB.');
+        setCvError('CV file size cannot exceed 5MB.');
         setCvFile(null);
         setCvFileName(null);
         return;
       }
       setCvFile(file);
       setCvFileName(file.name);
-      setError('');
+      setCvError('');
     }
   };
 
   const validateForm = () => {
+    let isValid = true;
+
+    // Validate enrollYear
     if (!enrollYear || !/^\d{2}$/.test(enrollYear)) {
-      setError('Student ID must be a two-digit number.');
-      return false;
+      setEnrollYearError('두 자리 숫자로 작성해주세요. (e.g. 25)');
+      isValid = false;
+    } else {
+      setEnrollYearError('');
     }
+
+    // Validate departments
     if (departments.some(dep => !dep.trim())) {
-      setError('All department fields must be filled.');
-      return false;
+      setDepartmentsError('주전공은 필수 작성이며, 다전공은 총 6개 이하로 중복되지 않게 입력해주세요.');
+      isValid = false;
+    } else if (new Set(departments).size !== departments.length) {
+      setDepartmentsError('주전공은 필수 작성이며, 다전공은 총 6개 이하로 중복되지 않게 입력해주세요.');
+      isValid = false;
+    } else {
+      setDepartmentsError('');
     }
-    if (new Set(departments).size !== departments.length) {
-      setError('Duplicate departments are not allowed.');
-      return false;
-    }
+
+    // Validate CV
     if (!cvFile && !cvFileName) {
-      setError('CV is required.');
-      return false;
+      setCvError('5MB 이하의 PDF 파일을 올려주세요.');
+      isValid = false;
+    } else {
+      setCvError('');
     }
-    setError('');
-    return true;
+
+    return isValid;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setGeneralError(''); // Clear general error before validation
+
     if (!validateForm()) {
       return;
     }
@@ -122,7 +142,7 @@ const ProfilePage = () => {
       navigate('/mypage');
     } catch (error) {
       console.error('Failed to save profile:', error);
-      setError('Failed to save profile. Please try again.');
+      setGeneralError('Failed to save profile. Please try again.');
     }
   };
 
@@ -132,7 +152,7 @@ const ProfilePage = () => {
       <h2 className={styles.sectionTitle}>필수 작성 항목</h2>
       <p>아래 항목은 필수로 작성해주세요.</p>
       <form onSubmit={handleSubmit} className={styles.form}>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {generalError && <p className={styles.generalError}>{generalError}</p>}
         <div className={styles.formGroup}>
           <label>학번 *</label>
           <div className={styles.studentIdInput}>
@@ -144,26 +164,30 @@ const ProfilePage = () => {
             />
             <span>학번</span>
           </div>
+          {enrollYearError && <p className={styles.errorText}>{enrollYearError}</p>}
         </div>
         <div className={styles.formGroup}>
           <label>학과 *</label>
           {departments.map((department, index) => (
-            <div key={index} className={styles.departmentInput}>
+            <div key={index} className={index > 0 ? styles.departmentInput : ''}>
               <input
                 type="text"
                 value={department}
                 onChange={(e) => handleDepartmentChange(index, e.target.value)}
               />
               {index > 0 && (
-                <button type="button" onClick={() => removeDepartment(index)}>
+                <button type="button" onClick={() => removeDepartment(index)} className={`${styles.button}`}>
                   삭제
                 </button>
               )}
             </div>
           ))}
-          <button type="button" onClick={addDepartment}>
-            추가
-          </button>
+          {departments.length < 7 && (
+            <button type="button" onClick={addDepartment}>
+              추가
+            </button>
+          )}
+          {departmentsError && <p className={styles.errorText}>{departmentsError}</p>}
         </div>
         <div className={styles.formGroup}>
           <label>이력서 (CV) *</label>
@@ -175,6 +199,7 @@ const ProfilePage = () => {
                 onClick={() => {
                   setCvFile(null);
                   setCvFileName(null);
+                  setCvError('');
                 }}
                 className={`${styles.button} ${styles.deleteButton}`}
               >
@@ -189,6 +214,7 @@ const ProfilePage = () => {
               <input id="cv-upload" type="file" accept=".pdf" onChange={handleCvChange} style={{ display: 'none' }} />
             </div>
           )}
+          {cvError && <p className={styles.errorText}>{cvError}</p>}
         </div>
         <div>
           <button type="submit" className={`${styles.button} ${styles.saveButton}`}>

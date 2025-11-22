@@ -124,7 +124,7 @@ const MyPage = () => {
               <div className={styles.profileName}>{profile?.name}</div>
               <div className={styles.profileEmail}>{profile?.email}</div>
               <div className={styles.profileDetails}>
-                {profile?.department} {profile?.enrollYear.toString().slice(-2)}학번
+                {profile?.department.split(',').join(', ')} {profile?.enrollYear.toString().slice(-2)}학번
               </div>
             </div>
           ) : (
